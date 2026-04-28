@@ -6,7 +6,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential curl git \
     && rm -rf /var/lib/apt/lists/*
 
-RUN pip install --no-cache-dir "memovex[api,vector,cache]"
+RUN pip install --no-cache-dir "memovex[api,vector,cache] @ git+https://github.com/axisdynamics/memovex.git"
 
 ENV PYTHONUNBUFFERED=1
 ENV MEMOVEX_SNAPSHOT_DIR=/app/data/snapshots
