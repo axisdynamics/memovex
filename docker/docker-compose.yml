@@ -1,0 +1,129 @@
+###############################################################################
+# memovex — Docker Compose
+#
+# Default stack (always started):
+#   qdrant        vector store              port 6333
+#   redis         recency cache             port 6379
+#   memovex-api   multi-agent REST API      port 7914
+#
+# Optional features (enabled via .env or environment variables):
+#   Embeddings  →  EMBEDDINGS_ENABLED=true
+#                  Downloads sentence-transformers model on first run (~420 MB).
+#                  Cached in hf_cache volume — no re-download on restart.
+#
+#   Chroma      →  CHROMA_ENABLED=true
+#                  Persists per-agent Chroma collections inside memovex_data.
+#                  No extra container needed (embedded mode).
+#
+# Per-agent namespaces:
+#   claude   → Qdrant: memovex_claude   | Redis: memovex:claude:*
+#   hermes   → Qdrant: memovex_hermes   | Redis: memovex:hermes:*
+#   openclaw → Qdrant: memovex_openclaw | Redis: memovex:openclaw:*
+#
+# Usage:
+#   docker compose -f docker/docker-compose.yml up -d          # default
+#   EMBEDDINGS_ENABLED=true docker compose ... up -d           # + embeddings
+#   EMBEDDINGS_ENABLED=true CHROMA_ENABLED=true docker compose ... up -d
+###############################################################################
+
+networks:
+  memovex:
+    driver: bridge
+
+volumes:
+  qdrant_data:        # Qdrant vector index
+  redis_data:         # Redis persistence (RDB)
+  memovex_data:       # API snapshots + Chroma collections (/app/data)
+  memovex_config:     # memovex.yaml / providers.yaml (/app/config)
+  hf_cache:           # HuggingFace model cache (sentence-transformers)
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # Qdrant — vector store
+  # ---------------------------------------------------------------------------
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: memovex-qdrant
+    restart: unless-stopped
+    ports:
+      - "6333:6333"
+      - "6334:6334"   # gRPC
+    volumes:
+      - qdrant_data:/qdrant/storage
+    networks:
+      - memovex
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/localhost/6333' 2>/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 8
+      start_period: 15s
+
+  # ---------------------------------------------------------------------------
+  # Redis — recency cache
+  # ---------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: memovex-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - memovex
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # ---------------------------------------------------------------------------
+  # MemoVex API
+  # ---------------------------------------------------------------------------
+  memovex-api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: memovex-api
+    restart: unless-stopped
+    depends_on:
+      qdrant:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "7914:7914"
+    environment:
+      # Infrastructure
+      QDRANT_HOST: qdrant
+      QDRANT_PORT: "6333"
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+
+      # Embeddings (sentence-transformers — set true to enable)
+      EMBEDDINGS_ENABLED: "${EMBEDDINGS_ENABLED:-false}"
+
+      # Chroma (embedded, no extra container — set true to enable)
+      CHROMA_ENABLED: "${CHROMA_ENABLED:-false}"
+      CHROMA_PERSIST_DIR: "/app/data/chroma"
+
+      # Persistence
+      MEMOVEX_PERSISTENCE_ENABLED: "${MEMOVEX_PERSISTENCE_ENABLED:-true}"
+      MEMOVEX_SNAPSHOT_DIR: "/app/data/snapshots"
+
+      LOG_LEVEL: "${LOG_LEVEL:-INFO}"
+    volumes:
+      - memovex_config:/app/config
+      - memovex_data:/app/data
+      # HuggingFace model cache — only used when EMBEDDINGS_ENABLED=true
+      - hf_cache:/root/.cache/huggingface
+    networks:
+      - memovex
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7914/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s

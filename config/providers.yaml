@@ -1,0 +1,46 @@
+# memovex — Provider Registry
+#
+# Each provider can be enabled/disabled independently.
+# Credentials and connection strings go here; secrets should be
+# injected via environment variables (see 'env_var' keys).
+
+providers:
+
+  qdrant:
+    host: "localhost"
+    port: 6333
+    collection: "memovex_vex"
+    grpc_port: 6334
+    prefer_grpc: false
+    api_key_env: "QDRANT_API_KEY"      # env var name, not the key itself
+
+  redis:
+    host: "localhost"
+    port: 6379
+    db: 0
+    password_env: "REDIS_PASSWORD"
+    ttl_seconds: 3600                  # cache TTL for recency index
+
+  chroma:
+    host: "localhost"
+    port: 8000
+    collection: "memovex_chroma"
+    persist_directory: "./data/chroma"
+
+  mem0:
+    enabled: false
+    base_url: "https://api.mem0.ai"
+    api_key_env: "MEM0_API_KEY"
+    user_id: "memovex_vex"
+
+  memobase:
+    enabled: false
+    letta_url: "http://localhost:8080"
+    neo4j_url: "bolt://localhost:7687"
+    neo4j_user: "neo4j"
+    neo4j_password_env: "NEO4J_PASSWORD"
+
+  mempalace:
+    enabled: false
+    data_dir: "./data/mempalace"
+    index_file: "palace_index.json"

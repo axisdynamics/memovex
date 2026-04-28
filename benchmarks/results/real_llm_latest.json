@@ -1,0 +1,48 @@
+{
+  "locomo": {
+    "benchmark": "LoCoMo (Percena/locomo-mc10)",
+    "n_samples": 50,
+    "n_summaries": 950,
+    "n_turns": 20950,
+    "llm_used": true,
+    "llm_model": "gpt-4o-mini",
+    "mc_accuracy": 0.400,
+    "top5_accuracy": 0.400,
+    "mrr": 0.400,
+    "random_baseline": 0.100,
+    "avg_latency_ms": 2492.2,
+    "p99_latency_ms": 4693.5,
+    "llm_calls": 50,
+    "llm_tokens": 77262,
+    "llm_cost_usd": 0.0232,
+    "type_breakdown": {
+      "single_hop":         {"n": 19, "mc_accuracy": 0.474, "top5_accuracy": 0.474},
+      "temporal_reasoning": {"n": 7,  "mc_accuracy": 0.571, "top5_accuracy": 0.571},
+      "multi_hop":          {"n": 24, "mc_accuracy": 0.292, "top5_accuracy": 0.292}
+    }
+  },
+  "musique": {
+    "benchmark": "MuSiQue (bdsaglam/musique, answerable validation)",
+    "n_samples": 100,
+    "llm_used": true,
+    "llm_model": "gpt-4o-mini",
+    "recall_at_1": 0.080,
+    "recall_at_5": 0.420,
+    "mrr": 0.224,
+    "token_f1": 0.057,
+    "graph_hit_rate": 1.000,
+    "avg_latency_ms": 5.5,
+    "llm_token_f1": 0.334,
+    "llm_exact_match": 0.190,
+    "llm_calls": 100,
+    "llm_tokens": 70476,
+    "llm_cost_usd": 0.0211,
+    "hop_breakdown": {
+      "2hop": {"n": 60, "recall@1": 0.117, "recall@5": 0.467, "graph_hit_rate": 1.000, "llm_token_f1": 0.371},
+      "3hop": {"n": 25, "recall@1": 0.040, "recall@5": 0.400, "graph_hit_rate": 1.000, "llm_token_f1": 0.367},
+      "4hop": {"n": 15, "recall@1": 0.000, "recall@5": 0.267, "graph_hit_rate": 1.000, "llm_token_f1": 0.129}
+    }
+  },
+  "total_llm_cost_usd": 0.0443,
+  "run_date": "2026-04-27"
+}

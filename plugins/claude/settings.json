@@ -1,0 +1,31 @@
+{
+  "_readme": "Run `python scripts/setup_plugin.py --agent claude --output /your/project/.claude/settings.json` to generate this with correct absolute paths.",
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 /YOUR_MEMOVEX_PATH/plugins/claude/hooks/memory_inject.py",
+            "timeout": 8,
+            "statusMessage": "Consultando memoria [memovex]..."
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 /YOUR_MEMOVEX_PATH/plugins/claude/hooks/memory_store.py",
+            "timeout": 15,
+            "statusMessage": "Guardando en memoria [memovex]..."
+          }
+        ]
+      }
+    ]
+  }
+}

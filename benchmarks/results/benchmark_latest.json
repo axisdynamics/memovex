@@ -1,0 +1,118 @@
+{
+  "run_date": "2026-04-28",
+  "engines": [
+    {
+      "label": "emb",
+      "pkg_path": "/home/plaxius/Documentos/GITHUB/memovex_2.0",
+      "run_date": "2026-04-28",
+      "locomo_samples": 200,
+      "musique_samples": 523,
+      "embeddings": true,
+      "llm": true,
+      "mode": "retrieval+LLM",
+      "locomo": {
+        "benchmark": "LoCoMo (Percena/locomo-mc10)",
+        "n_samples": 200,
+        "n_summaries": 3800,
+        "n_turns": 83750,
+        "seed_ms": 43882.1,
+        "mc_accuracy": 0.47,
+        "top5_accuracy": 0.47,
+        "mrr": 0.47,
+        "random_baseline": 0.1,
+        "avg_latency_ms": 2656.0,
+        "p99_latency_ms": 11182.8,
+        "n_queries": 200,
+        "llm_used": true,
+        "type_breakdown": {
+          "multi_hop": {
+            "mc_accuracy": 0.263,
+            "top5_accuracy": 0.263,
+            "n": 38
+          },
+          "temporal_reasoning": {
+            "mc_accuracy": 0.231,
+            "top5_accuracy": 0.231,
+            "n": 13
+          },
+          "single_hop": {
+            "mc_accuracy": 0.312,
+            "top5_accuracy": 0.312,
+            "n": 32
+          },
+          "open_domain": {
+            "mc_accuracy": 0.514,
+            "top5_accuracy": 0.514,
+            "n": 70
+          },
+          "adversarial": {
+            "mc_accuracy": 0.745,
+            "top5_accuracy": 0.745,
+            "n": 47
+          }
+        },
+        "llm_stats": {
+          "model": "gpt-4o-mini",
+          "calls": 200,
+          "total_tokens": 273147,
+          "estimated_cost_usd": 0.0819
+        }
+      },
+      "musique": {
+        "benchmark": "MuSiQue (bdsaglam/musique, answerable validation)",
+        "n_samples": 523,
+        "total_eval_ms": 885318.0,
+        "recall@1": 0.147,
+        "recall@5": 0.554,
+        "mrr": 0.319,
+        "token_f1": 0.069,
+        "graph_hit_rate": 1.0,
+        "avg_latency_ms": 22.1,
+        "n": 523,
+        "llm_token_f1": 0.387,
+        "llm_exact_match": 0.205,
+        "hop_breakdown": {
+          "2hop": {
+            "recall@1": 0.12,
+            "recall@5": 0.528,
+            "mrr": 0.297,
+            "token_f1": 0.075,
+            "graph_hit_rate": 1.0,
+            "avg_latency_ms": 20.8,
+            "n": 299,
+            "llm_token_f1": 0.377,
+            "llm_exact_match": 0.194
+          },
+          "3hop": {
+            "recall@1": 0.197,
+            "recall@5": 0.642,
+            "mrr": 0.375,
+            "token_f1": 0.055,
+            "graph_hit_rate": 1.0,
+            "avg_latency_ms": 23.3,
+            "n": 137,
+            "llm_token_f1": 0.41,
+            "llm_exact_match": 0.204
+          },
+          "4hop": {
+            "recall@1": 0.161,
+            "recall@5": 0.506,
+            "mrr": 0.307,
+            "token_f1": 0.07,
+            "graph_hit_rate": 1.0,
+            "avg_latency_ms": 24.9,
+            "n": 87,
+            "llm_token_f1": 0.384,
+            "llm_exact_match": 0.241
+          }
+        },
+        "llm_stats": {
+          "model": "gpt-4o-mini",
+          "calls": 723,
+          "total_tokens": 647593,
+          "estimated_cost_usd": 0.1943
+        }
+      }
+    }
+  ]
+}

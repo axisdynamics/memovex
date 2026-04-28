@@ -1,0 +1,72 @@
+# memovex — Configuration (v1.1)
+
+memovex:
+  version: "1.1"
+  description: "memovex — Multi-channel memory system for LLMs"
+
+  core:
+    memorystore_max_memories: 5000
+    historical_load_limit: 500
+    max_prefetch_tokens: 1000
+
+  homeostasis:
+    interval: 300
+    decay_amount: 0.03
+    protection:
+      wisdom: true
+      min_confidence: 0.2
+
+  # Channel weights (must sum to 1.0).
+  # base64_resonance removed in v1.1 — consolidated into 'symbolic'.
+  channels:
+    semantic:          0.35
+    entity:            0.15
+    graph_traversal:   0.12
+    wisdom:            0.10
+    temporal:          0.08
+    recency:           0.06
+    reasoning_chain:   0.05
+    symbolic:          0.05
+    usage:             0.02
+    tag:               0.02
+
+  embeddings:
+    model: "all-MiniLM-L6-v2"
+    device: "cpu"          # cpu | cuda | mps
+    batch_size: 32
+    enabled: true          # set false to fall back to BoW only
+
+  providers:
+    resonant:
+      enabled: true
+      qdrant_host: "localhost"
+      qdrant_port: 6333
+      qdrant_collection: "memovex_vex"
+      redis_host: "localhost"
+      redis_port: 6379
+
+    mem0:
+      enabled: false
+      db_path: "memovex_mem0.db"
+      embedding_model: "all-MiniLM-L6-v2"
+
+    memobase:
+      enabled: false
+      api_url: "http://localhost:8080"
+      graph_db: "neo4j://localhost:7687"
+
+    mempalace:
+      enabled: false
+      data_dir: "./data/mempalace"
+
+  reasoning:
+    enabled: true
+    max_graph_depth: 2
+    min_chain_confidence: 0.6
+
+  wisdom:
+    promote_to_processed: 0.40
+    promote_to_curated:   0.60
+    promote_to_wisdom:    0.80
+    wisdom_salience_min:  0.70
+    wisdom_evidence_min:  2

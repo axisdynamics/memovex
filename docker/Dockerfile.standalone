@@ -1,0 +1,16 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential curl git \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN pip install --no-cache-dir "memovex[api,vector,cache]"
+
+ENV PYTHONUNBUFFERED=1
+ENV MEMOVEX_SNAPSHOT_DIR=/app/data/snapshots
+
+EXPOSE 7914
+
+CMD ["uvicorn", "memovex.api:app", "--host", "0.0.0.0", "--port", "7914", "--workers", "1"]

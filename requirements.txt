@@ -1,0 +1,38 @@
+# memovex V2.0 — Python dependencies (production)
+#
+# This file is what the Docker image installs. It contains the minimum
+# needed to run the REST API and the multi-channel retrieval pipeline.
+# See pyproject.toml for the full extras catalog (chroma, embeddings,
+# llm, benchmarks, dev).
+
+# Core (required)
+networkx>=3.2,<4.0
+pydantic>=2.0,<3.0
+
+# REST API (required by Docker image)
+fastapi>=0.110.0,<1.0
+uvicorn[standard]>=0.27.0,<1.0
+
+# Default vector store
+qdrant-client>=1.8.0,<2.0
+
+# Cache & recency tracking
+redis>=5.0.0,<6.0
+
+# Optional — install via `pip install memovex[chroma]` instead
+# chromadb>=0.4.0
+
+# Optional — install via `pip install memovex[embeddings]`
+# sentence-transformers>=2.7.0
+
+# Optional — install via `pip install memovex[llm]`
+# openai>=1.0
+
+# Optional — install via `pip install memovex[benchmarks]`
+# datasets>=2.0
+# huggingface-hub>=0.20
+
+# Optional — install via `pip install memovex[dev]`
+# pytest>=8.0
+# pytest-benchmark>=4.0
+# httpx>=0.26

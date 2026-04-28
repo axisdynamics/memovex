@@ -1,0 +1,67 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+.venv/
+venv/
+env/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Secrets / local config
+.env
+.env.*
+config/local_*.yaml
+
+# Snapshots and runtime data
+*.snapshot.json
+~/.claude/memovex/
+
+# Qdrant local storage
+qdrant_storage/
+
+# ChromaDB local storage
+chroma_db/
+
+# Sentence-transformers model cache
+.cache/
+models/
+
+# Logs
+*.log
+logs/
+
+# Claude Code local settings
+.claude/settings.local.json
+
+# Benchmarks raw output (keep results/ tracked)
+benchmarks/results/*.log
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+
+# Docker local env overrides
+docker/.env
+
+# Temporary test install
+/tmp/test_memovex_install/

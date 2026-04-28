@@ -1,0 +1,101 @@
+###############################################################################
+# MemoVex — Standalone Docker Compose
+#
+# This file is designed to live in a permanent directory (e.g. ~/memovex/)
+# completely independent of the cloned repository.
+#
+# Quick start:
+#   cd ~/memovex
+#   docker compose up -d
+#
+# Optional features:
+#   EMBEDDINGS_ENABLED=true docker compose up -d   # sentence-transformers
+#   CHROMA_ENABLED=true     docker compose up -d   # embedded Chroma
+#
+# Ports exposed to the host:
+#   7914  MemoVex API
+#   6333  Qdrant REST (disable by removing the ports entry if not needed)
+#   6379  Redis        (same)
+###############################################################################
+
+networks:
+  memovex:
+    driver: bridge
+
+volumes:
+  qdrant_data:
+  redis_data:
+  memovex_data:
+  hf_cache:
+
+services:
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: memovex-qdrant
+    restart: unless-stopped
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    networks:
+      - memovex
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/localhost/6333' 2>/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 8
+      start_period: 15s
+
+  redis:
+    image: redis:7-alpine
+    container_name: memovex-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - memovex
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  memovex-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: memovex-api
+    restart: unless-stopped
+    depends_on:
+      qdrant:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "7914:7914"
+    environment:
+      QDRANT_HOST: qdrant
+      QDRANT_PORT: "6333"
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      EMBEDDINGS_ENABLED:          "${EMBEDDINGS_ENABLED:-false}"
+      CHROMA_ENABLED:              "${CHROMA_ENABLED:-false}"
+      CHROMA_PERSIST_DIR:          "/app/data/chroma"
+      MEMOVEX_PERSISTENCE_ENABLED: "${MEMOVEX_PERSISTENCE_ENABLED:-true}"
+      MEMOVEX_SNAPSHOT_DIR:        "/app/data/snapshots"
+      LOG_LEVEL:                   "${LOG_LEVEL:-INFO}"
+    volumes:
+      - memovex_data:/app/data
+      - hf_cache:/root/.cache/huggingface
+    networks:
+      - memovex
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7914/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
