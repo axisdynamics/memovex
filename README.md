@@ -156,6 +156,71 @@ print(llm.answer_open('What is MemoVex?',
 
 ---
 
+## Embeddings (semantic retrieval)
+
+By default MemoVex runs without a dense embedding model. The `semantic` channel
+(weight 0.32) falls back to bag-of-words (BoW) overlap, which is fast (~3 ms)
+and requires no extra download, but only matches on shared tokens — not meaning.
+
+### Enabling embeddings
+
+**Docker stack** — set `EMBEDDINGS_ENABLED=true` before starting, or persist it
+in the `.env` file that lives alongside `docker-compose.yml`:
+
+```bash
+# One-off start with embeddings
+EMBEDDINGS_ENABLED=true docker compose up -d
+
+# Permanent — add to ~/memovex/.env so it survives restarts
+echo "EMBEDDINGS_ENABLED=true" >> ~/memovex/.env
+docker compose up -d
+```
+
+On first start the container downloads `sentence-transformers/all-MiniLM-L6-v2`
+(**~420 MB**) into the `hf_cache` Docker volume. Subsequent starts reuse the
+cached model — no re-download.
+
+**Direct / in-process** — pass `embeddings_enabled=True` to the orchestrator:
+
+```python
+bank = MemoVexOrchestrator(agent_id="claude", embeddings_enabled=True)
+```
+
+### What changes with embeddings on
+
+| Aspect | BoW (default) | Embeddings ON |
+|--------|:-------------:|:-------------:|
+| Semantic channel backend | token overlap | dense cosine (Qdrant) |
+| Score range typical | 0.10 – 0.30 | 0.40 – 0.95 |
+| Matches across synonyms / paraphrase | ✗ | ✓ |
+| First-start download | none | ~420 MB |
+| LoCoMo MC@10 accuracy | 0.120 | **0.175** (+46 %) |
+| MuSiQue 3-hop Recall@1 | 0.095 | **0.197** (+107 %) |
+
+### How the agent hooks adapt automatically
+
+The `memory_inject` hooks for all three agents (`claude`, `hermes`, `openclaw`)
+detect which backend served each result by reading the engine tag in the raw API
+response (`[qdrant]` / `[chroma]` vs `[native]`), then adjust thresholds and
+result count accordingly — no configuration needed:
+
+| Engine detected | Min score | Top-k returned |
+|-----------------|:---------:|:--------------:|
+| `semantic` (qdrant / chroma) | 0.20 | 3 |
+| `keyword` (native BoW) | 0.10 | 4 |
+
+Override either value via environment variable:
+
+```bash
+export MEMOVEX_MIN_SCORE=0.25   # raise bar; applied regardless of engine
+```
+
+The injected context always arrives as clean bullet points — infrastructure
+metadata (`[semantic]`, `score:0.82`, `[qdrant]`) is stripped before the agent
+sees it.
+
+---
+
 ## Persistence
 
 The API has snapshot-based persistence wired in. Two env vars control it:
