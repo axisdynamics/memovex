@@ -21,7 +21,8 @@ _API_TIMEOUT = int(os.getenv("MEMOVEX_API_TIMEOUT", "5"))
 
 
 def _allow() -> None:
-    print(json.dumps({"decision": "allow"}))
+    # Stop hooks don't use "decision" — just exit 0 silently.
+    pass
 
 
 def _extract_text(content) -> str:

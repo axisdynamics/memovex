@@ -23,13 +23,16 @@ _MIN_SCORE_OVERRIDE = os.getenv("MEMOVEX_MIN_SCORE")
 
 
 def _allow(context: str = "") -> None:
-    out: dict = {"decision": "allow"}
+    # UserPromptSubmit hooks don't use "decision" — that field is PreToolUse only.
+    # With no context: exit silently (allow with no injection).
+    # With context: output hookSpecificOutput only.
     if context:
-        out["hookSpecificOutput"] = {
-            "hookEventName": "UserPromptSubmit",
-            "additionalContext": context,
-        }
-    print(json.dumps(out))
+        print(json.dumps({
+            "hookSpecificOutput": {
+                "hookEventName": "UserPromptSubmit",
+                "additionalContext": context,
+            }
+        }))
 
 
 # ---------------------------------------------------------------------------
