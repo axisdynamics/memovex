@@ -42,7 +42,7 @@ try:
     from fastapi import FastAPI, HTTPException, Path as PathParam, Request
     from fastapi.middleware.cors import CORSMiddleware
     from fastapi.responses import JSONResponse
-    from pydantic import BaseModel, Field, field_validator
+    from pydantic import BaseModel, Field, field_validator, model_validator
 except ImportError:
     raise ImportError(
         "fastapi and pydantic are required for the API server.\n"
@@ -50,6 +50,7 @@ except ImportError:
     )
 
 from .core.memory_bank import MemoVexOrchestrator
+from .core.security import contains_secret, is_secret_only, redact_secrets
 from .core.types import MemoryType
 
 # ---------------------------------------------------------------------------
@@ -261,6 +262,39 @@ class CorroborateRequest(BaseModel):
     delta_confidence: float = Field(0.05, ge=0.0, le=0.5)
 
 
+class DeleteMemoryResponse(BaseModel):
+    agent_id: str
+    memory_id: str
+    deleted: bool
+
+
+class RedactRequest(BaseModel):
+    contains: Optional[str] = Field(None, min_length=8, max_length=_MAX_QUERY_LEN)
+    secret_patterns: bool = False
+    dry_run: bool = False
+
+    @field_validator("contains")
+    @classmethod
+    def _no_blank_contains(cls, value: Optional[str]) -> Optional[str]:
+        if value is not None and not value.strip():
+            raise ValueError("contains must not be blank")
+        return value
+
+    @model_validator(mode="after")
+    def _requires_matcher(self) -> "RedactRequest":
+        if not self.contains and not self.secret_patterns:
+            raise ValueError("contains or secret_patterns=true is required")
+        return self
+
+
+class RedactResponse(BaseModel):
+    agent_id: str
+    matched: int
+    deleted: int
+    memory_ids: List[str]
+    dry_run: bool
+
+
 class SnapshotResponse(BaseModel):
     agent_id: str
     saved: int
@@ -296,6 +330,11 @@ async def store(
     agent_id: str = PathParam(..., pattern=_AGENT_ID_PATTERN),
 ):
     bank = get_agent(agent_id)
+    if is_secret_only(body.text):
+        raise HTTPException(
+            status_code=422,
+            detail="Refusing to store a payload that appears to be only a secret or credential.",
+        )
     try:
         mt = MemoryType(body.memory_type)
     except ValueError:
@@ -338,7 +377,7 @@ async def retrieve(
         results=[
             MemoryResult(
                 memory_id=r.memory.memory_id,
-                text=r.memory.text,
+                text=redact_secrets(r.memory.text),
                 memory_type=r.memory.memory_type.value,
                 total_score=round(r.total_score, 4),
                 channel_scores={k: round(v, 4) for k, v in r.channel_scores.items()},
@@ -423,6 +462,57 @@ async def wisdom(agent_id: str = PathParam(..., pattern=_AGENT_ID_PATTERN)):
 async def graph_stats(agent_id: str = PathParam(..., pattern=_AGENT_ID_PATTERN)):
     bank = get_agent(agent_id)
     return {"agent_id": agent_id, **bank.graph_stats()}
+
+
+@app.delete("/api/{agent_id}/memory/{memory_id}", response_model=DeleteMemoryResponse)
+async def delete_memory(
+    memory_id: str = PathParam(..., min_length=1, max_length=128),
+    agent_id: str = PathParam(..., pattern=_AGENT_ID_PATTERN),
+):
+    """Delete a specific memory by id from this agent namespace."""
+    bank = get_agent(agent_id)
+    deleted = bank.delete_memory(memory_id)
+    logger.info("agent=%s op=delete memory_id=%s deleted=%s", agent_id, memory_id, deleted)
+    if _PERSISTENCE_ENABLED:
+        bank.save_snapshot(str(_snapshot_path(agent_id)))
+    return DeleteMemoryResponse(agent_id=agent_id, memory_id=memory_id, deleted=deleted)
+
+
+@app.post("/api/{agent_id}/redact", response_model=RedactResponse)
+async def redact(
+    body: RedactRequest,
+    agent_id: str = PathParam(..., pattern=_AGENT_ID_PATTERN),
+):
+    """Delete memories containing a sensitive substring.
+
+    This is an operator purge path for compromised tokens or accidental PII.
+    The request is deliberately substring-based, bounded, and agent-scoped.
+    """
+    bank = get_agent(agent_id)
+    memory_ids = [
+        mem.memory_id
+        for mem in bank._memory_store.all()
+        if (body.contains is not None and body.contains in mem.text)
+        or (body.secret_patterns and contains_secret(mem.text))
+    ]
+    deleted = 0
+    if not body.dry_run:
+        for mid in memory_ids:
+            if bank.delete_memory(mid):
+                deleted += 1
+        if _PERSISTENCE_ENABLED and deleted:
+            bank.save_snapshot(str(_snapshot_path(agent_id)))
+    logger.info(
+        "agent=%s op=redact matched=%d deleted=%d dry_run=%s",
+        agent_id, len(memory_ids), deleted, body.dry_run,
+    )
+    return RedactResponse(
+        agent_id=agent_id,
+        matched=len(memory_ids),
+        deleted=deleted,
+        memory_ids=memory_ids,
+        dry_run=body.dry_run,
+    )
 
 
 @app.post("/api/{agent_id}/snapshot", response_model=SnapshotResponse)

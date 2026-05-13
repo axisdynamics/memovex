@@ -26,6 +26,7 @@ from .resonance_engine import (
 )
 from .types import Memory, MemoryType, RetrievalResult
 from .homeostasis import HomeostasisManager
+from .security import redact_secrets
 from .wisdom_store import WisdomStore, WisdomLevel
 
 logger = logging.getLogger(__name__)
@@ -179,6 +180,7 @@ class MemoVexOrchestrator:
               confidence: float = 0.7, salience: float = 0.5,
               provider: str = "native") -> str:
         """Store a memory across all active providers."""
+        text = redact_secrets(text)
 
         symbols = text_to_symbols(text, max_keywords=10)
         if entities is None:
@@ -250,6 +252,7 @@ class MemoVexOrchestrator:
                                entities: Optional[Set[str]] = None,
                                confidence: float = 0.7) -> str:
         """Store a reasoning chain and build its graph edges."""
+        text = redact_secrets(text)
         graph_nodes: Set[str] = set()
         graph_edges = []
         for hop in hops:
@@ -338,6 +341,33 @@ class MemoVexOrchestrator:
                 self._redis.record_access(r.memory.memory_id)
 
         return results[:top_k]
+
+    def delete_memory(self, memory_id: str) -> bool:
+        """Delete one memory from local indices and best-effort external stores."""
+        with self._lock:
+            deleted = self._memory_store.remove(memory_id)
+            self._wisdom_store._entries.pop(memory_id, None)
+
+        if self._qdrant:
+            self._qdrant.delete(memory_id)
+        if self._chroma:
+            self._chroma.delete(memory_id)
+        if self._redis:
+            self._redis.flush_namespace()
+        return deleted
+
+    def redact_memories(self, contains: str) -> List[str]:
+        """Delete memories whose text contains the supplied sensitive string."""
+        if not contains or len(contains) < 8:
+            return []
+        matches = [
+            mem.memory_id
+            for mem in self._memory_store.all()
+            if contains in mem.text
+        ]
+        for mid in matches:
+            self.delete_memory(mid)
+        return matches
 
     def prefetch(self, query: str, max_tokens: int = 1000) -> str:
         """Generate LLM-ready context string respecting a token budget."""

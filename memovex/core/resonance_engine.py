@@ -168,6 +168,13 @@ class MemoryStore:
     def count(self) -> int:
         return len(self.memories)
 
+    def remove(self, memory_id: str) -> bool:
+        """Remove one memory and all of its secondary-index entries."""
+        if memory_id not in self.memories:
+            return False
+        self._remove_from_indices(memory_id)
+        return True
+
     def candidates_by_base64(self, symbols: Set[str]) -> Set[str]:
         out: Set[str] = set()
         for sym in symbols:
