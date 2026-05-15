@@ -1,0 +1,40 @@
+{
+  "mode": "local_then_async_semantic",
+  "fixture_entries": 500,
+  "first_pass_queries": 400,
+  "first_pass_latency_ms": {
+    "min": 0.648712,
+    "median": 0.6738535,
+    "p95": 0.7317505,
+    "max": 1.838518
+  },
+  "first_pass_routes": {
+    "local": 300,
+    "local_background_scheduled": 100
+  },
+  "background_drained": true,
+  "background_stats": {
+    "submitted": 100,
+    "completed": 100,
+    "errors": 0,
+    "pending": 0,
+    "cache_items": 100
+  },
+  "second_pass_unknown_queries": 100,
+  "second_pass_latency_ms": {
+    "min": 0.678252,
+    "median": 0.693058,
+    "p95": 0.7068265,
+    "max": 0.853124
+  },
+  "second_pass_routes": {
+    "semantic_cache": 100
+  },
+  "semantic_calls": 100,
+  "targets": {
+    "first_pass_p95_lt_2ms": true,
+    "background_drained": true,
+    "second_pass_unknown_median_lt_5ms": true,
+    "unknown_cache_fill_gte_95pct": true
+  }
+}

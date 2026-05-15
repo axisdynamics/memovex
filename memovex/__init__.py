@@ -36,8 +36,9 @@ from .core.resonance_engine import (
     ResonanceEngine,
 )
 from .core.wisdom_store import WisdomLevel, WisdomStore
+from .core.memory_router import LocalMemoryEntry, LocalMemoryIndex, MemoryRouter, TTLCache
 
-__version__ = "1.1.0"
+__version__ = "2.0.0"
 
 __all__ = [
     "MemoVexOrchestrator",
@@ -51,6 +52,10 @@ __all__ = [
     "ResonanceEngine",
     "WisdomLevel",
     "WisdomStore",
+    "LocalMemoryEntry",
+    "LocalMemoryIndex",
+    "MemoryRouter",
+    "TTLCache",
     "__version__",
 ]
 

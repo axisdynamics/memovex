@@ -51,9 +51,17 @@ class GraphStore:
 
     def add_relation(self, source: str, relation: str, target: str,
                      weight: float = 1.0, memory_id: Optional[str] = None) -> None:
+        s, t = source.lower(), target.lower()
+
+        # Keep the memory/entity index available even when NetworkX is not
+        # installed. Retrieval code can still use entity→memory lookups while
+        # graph traversal degrades gracefully.
+        if memory_id:
+            self._memory_index.setdefault(s, set()).add(memory_id)
+            self._memory_index.setdefault(t, set()).add(memory_id)
+
         if not self.available:
             return
-        s, t = source.lower(), target.lower()
         self._graph.add_node(s)
         self._graph.add_node(t)
         if self._graph.has_edge(s, t):
@@ -70,11 +78,6 @@ class GraphStore:
                 relations={relation},
                 memory_ids={memory_id} if memory_id else set(),
             )
-
-        # Index entity → memory_id
-        if memory_id:
-            self._memory_index.setdefault(s, set()).add(memory_id)
-            self._memory_index.setdefault(t, set()).add(memory_id)
 
     def add_from_hops(self, hops: List[Dict], memory_id: str,
                       confidence: float = 0.7) -> None:

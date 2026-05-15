@@ -214,7 +214,7 @@ class TestPackageImports:
             RetrievalResult, DEFAULT_CHANNEL_WEIGHTS, MemoryStore,
             ResonanceEngine, WisdomLevel, WisdomStore, __version__,
         )
-        assert __version__ == "1.1.0"
+        assert __version__ == "2.0.0"
         assert callable(MemoVexOrchestrator)
         assert isinstance(DEFAULT_CHANNEL_WEIGHTS, dict)
 
